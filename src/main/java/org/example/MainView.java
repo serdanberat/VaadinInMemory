@@ -23,45 +23,38 @@ import java.util.List;
 @Route
 public class MainView extends VerticalLayout {
 
-
-    TextField filterArea = new TextField();
+    static ListDataProvider<EmployeeInformations> dataProvider = testData(); /**Add Employee**/
 
 public MainView(){
 
-    Crud<EmployeeInformations> crud = new Crud<>(EmployeeInformations.class, createGrid(), createEmployeeEditor());
-
-    ListDataProvider<EmployeeInformations> dataProvider1 = testData(); /**Created test data**/
-   // ListDataProvider<EmployeeInformations> dataProvider2 = createDataProvider(); /**Add Employee**/
-
+      Crud<EmployeeInformations> crud = new Crud<>(EmployeeInformations.class, createGrid(), createEmployeeEditor());
 
     CrudI18n customI18n = CrudI18n.createDefault();
     customI18n.setEditItem("Update Customer");
     customI18n.setNewItem("New Customer");
 
-    crud.setDataProvider(dataProvider1);
+    crud.setDataProvider(dataProvider);
     crud.setI18n(customI18n);
 
     crud.addSaveListener(saveEvent -> {
         EmployeeInformations toSave = saveEvent.getItem();
         // Save the item in the database
-        if (!dataProvider1.getItems().contains(toSave)) {
-            dataProvider1.getItems().add(toSave);
-        }
-
-
-    });
+        if(dataProvider==null)
+            dataProvider.getItems().add(toSave);
+        else if(!dataProvider.getItems().contains(toSave))
+            dataProvider.getItems().add(toSave);
+});
 
     crud.addDeleteListener(deleteEvent -> {
         // Delete the item in the database
-        dataProvider1.getItems().remove(deleteEvent.getItem());
+        dataProvider.getItems().remove(deleteEvent.getItem());
     });
 
     add(crud);
 
 }
 
-
-    private ListDataProvider<EmployeeInformations> testData() {
+    private static ListDataProvider<EmployeeInformations> testData() {
 
         List<EmployeeInformations> testData= new ArrayList<>();
 
@@ -122,11 +115,6 @@ public MainView(){
         nameFilter.setSizeFull();
         nameFilter.setPlaceholder("Filter");
         nameFilter.getElement().setAttribute("focus-target", "");
-
-        nameFilter.addValueChangeListener(event -> {
-            filterObject.setName(event.getValue());
-            dataProvider.refreshAll();
-        });
 
 
         TextField streetFilter= new TextField();
