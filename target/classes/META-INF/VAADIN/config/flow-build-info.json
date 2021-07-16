@@ -1,0 +1,15 @@
+{
+  "productionMode": false,
+  "useDeprecatedV14Bootstrapping": false,
+  "eagerServerLoad": false,
+  "npmFolder": "/Users/berat/IdeaProjects/FirstProject",
+  "generatedFolder": "/Users/berat/IdeaProjects/FirstProject/target/frontend",
+  "frontendFolder": "/Users/berat/IdeaProjects/FirstProject/frontend",
+  "connect.javaSourceFolder": "/Users/berat/IdeaProjects/FirstProject/src/main/java",
+  "connect.applicationProperties": "/Users/berat/IdeaProjects/FirstProject/src/main/resources/application.properties",
+  "connect.openApiFile": "/Users/berat/IdeaProjects/FirstProject/target/generated-resources/openapi.json",
+  "project.frontend.generated": "/Users/berat/IdeaProjects/FirstProject/frontend/generated",
+  "pnpm.enable": true,
+  "require.home.node": false,
+  "build.folder": "target"
+}
