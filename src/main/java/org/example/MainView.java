@@ -7,83 +7,94 @@ import com.vaadin.flow.component.crud.CrudI18n;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
-import org.example.entity.EmployeeInformations;
+import org.example.Entity.EmployeeInformations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
+import java.util.Vector;
 
 @Route
 public class MainView extends VerticalLayout {
 
-    static ListDataProvider<EmployeeInformations> dataProvider = testData(); /**Add Employee**/
+    // Init with test employee
+    static Vector<EmployeeInformations> dataProvider = testData();
 
-public MainView(){
+    private TextField phone = new TextField("Phone");
 
-      Crud<EmployeeInformations> crud = new Crud<>(EmployeeInformations.class, createGrid(), createEmployeeEditor());
+    Binder<EmployeeInformations> binder = new Binder<>(EmployeeInformations.class);
+    Grid<EmployeeInformations> grid = new Grid<>();
+    Crud<EmployeeInformations> crud = new Crud<>(EmployeeInformations.class, createGrid(grid), createCrudEditor());
 
-    CrudI18n customI18n = CrudI18n.createDefault();
-    customI18n.setEditItem("Update Customer");
-    customI18n.setNewItem("New Customer");
 
-    crud.setDataProvider(dataProvider);
-    crud.setI18n(customI18n);
+    public MainView() {
 
-    crud.addSaveListener(saveEvent -> {
-        EmployeeInformations toSave = saveEvent.getItem();
-        // Save the item in the database
-        if(dataProvider==null)
-            dataProvider.getItems().add(toSave);
-        else if(!dataProvider.getItems().contains(toSave))
-            dataProvider.getItems().add(toSave);
-});
+        CrudI18n customI18n = CrudI18n.createDefault();
+        customI18n.setEditItem("Update Customer");
+        customI18n.setNewItem("New Customer");
 
-    crud.addDeleteListener(deleteEvent -> {
-        // Delete the item in the database
-        dataProvider.getItems().remove(deleteEvent.getItem());
-    });
+        grid.setItems(dataProvider);
 
-    add(crud);
+        //LISTENERS
 
-}
+        crud.addNewListener(personInformationsNewEvent -> {
+            binder.forField(phone).withValidator(v -> isPhoneUnique(dataProvider,v),"Phone Must Be Unique").bind("phone");
+        });
 
-    private static ListDataProvider<EmployeeInformations> testData() {
+        crud.addSaveListener(saveEvent -> {
+            EmployeeInformations toSave = saveEvent.getItem();
+            // Save the item to memory
 
-        List<EmployeeInformations> testData= new ArrayList<>();
+            binder.setValidatorsDisabled(true);
+         if(dataProvider.stream().anyMatch(x -> x.getPhone().equals(saveEvent.getItem().getPhone())))
+             Notification.show("Phone Must Be Unique",2233, Notification.Position.TOP_CENTER);
+         else if (dataProvider != null && !dataProvider.contains(toSave))
+                dataProvider.add(toSave);
+        });
 
-        testData.add(new EmployeeInformations("Berat","ITU","Istanbul","sds@gmail.com","Turkey","1321312"));
+        crud.addDeleteListener(deleteEvent -> {
+            // Delete the item in the database
+            dataProvider.remove(deleteEvent.getItem());
+        });
 
-        return new ListDataProvider<>(testData);
+
+        add(crud);
 
     }
 
-    private  CrudEditor<EmployeeInformations> createEmployeeEditor() {
+    private static Vector<EmployeeInformations> testData() {
 
-        /**Update Edit Form**/
+        Vector<EmployeeInformations> testData = new Vector<>();
+        Integer phone = 1;
+
+        for ( int x =0; x < 10000000; x++) {
+            testData.add(new EmployeeInformations("Berat", "ITU", "Istanbul", "Turkey", phone.toString(), "1321312"));
+            phone++;
+            testData.add(new EmployeeInformations("Serdan", "ITU", "Istanbul", "Turkey", phone.toString(), "1321312"));
+            phone++;
+        }
+        return testData;
+
+    }
+
+    private CrudEditor<EmployeeInformations> createCrudEditor() {
+
+        Binder<EmployeeInformations> binder = new Binder<>(EmployeeInformations.class);
 
         TextField name = new TextField("Name");
         name.setRequiredIndicatorVisible(true);
-
         TextField street = new TextField("Street");
-
         TextField city = new TextField("City");
-
         TextField country = new TextField("Country");
-
-        TextField phone = new TextField("Phone");
-
         TextField email = new TextField("E-Mail");
 
-        FormLayout form = new FormLayout(name, street,city,email,country,phone);
 
-        Binder<EmployeeInformations> binder = new Binder<>(EmployeeInformations.class);
+        phone.setRequiredIndicatorVisible(true);
+
+        FormLayout form = new FormLayout(name, street, city, email, country, phone);
+
         binder.bind(name, EmployeeInformations::getName, EmployeeInformations::setName);
         binder.forField(name).asRequired("required!").bind("name");
         binder.bind(street, EmployeeInformations::getStreet, EmployeeInformations::setStreet);
@@ -91,69 +102,77 @@ public MainView(){
         binder.bind(email, EmployeeInformations::getEmail, EmployeeInformations::setEmail);
         binder.bind(country, EmployeeInformations::getCountry, EmployeeInformations::setCountry);
         binder.bind(phone, EmployeeInformations::getPhone, EmployeeInformations::setPhone);
+        binder.forField(phone).asRequired("required!").bind("phone");
+
         return new BinderCrudEditor<>(binder, form);
     }
 
-    private  Grid<EmployeeInformations> createGrid() {
+    private Grid<EmployeeInformations> createGrid(Grid<EmployeeInformations> grid) {
 
-        Grid<EmployeeInformations> grid = new Grid<>();
-
-        /**Grid Columns**/
-
-        grid.addColumn(c -> c.getName()).setHeader("Name").setKey("Name")
+        grid.addColumn(EmployeeInformations::getName).setHeader("Name").setKey("Name")
                 .setWidth("160px").setComparator(EmployeeInformations::getName);
-        grid.addColumn(c -> c.getStreet()).setHeader("Street").setKey("Street");
-        grid.addColumn(c -> c.getCity()).setHeader("City").setKey("City");
-        grid.addColumn(c -> c.getCountry()).setHeader("Country").setKey("Country");
-        grid.addColumn(c -> c.getEmail()).setHeader("Email").setKey("Email");
-        grid.addColumn(c -> c.getPhone()).setHeader("Phone").setKey("Phone");
+        grid.addColumn(EmployeeInformations::getPhone).setHeader("Phone").setKey("Phone");
 
-        /**Filter Rows**/
-        HeaderRow filterRow = grid.appendHeaderRow();
-
-        TextField nameFilter= new TextField();
-        nameFilter.setSizeFull();
-        nameFilter.setPlaceholder("Filter");
-        nameFilter.getElement().setAttribute("focus-target", "");
-
-
-        TextField streetFilter= new TextField();
-        streetFilter.setSizeFull();
-        streetFilter.setPlaceholder("Filter");
-        streetFilter.getElement().setAttribute("focus-target", "");
-
-        TextField cityFilter= new TextField();
-        cityFilter.setSizeFull();
-        cityFilter.setPlaceholder("Filter");
-        cityFilter.getElement().setAttribute("focus-target", "");
-
-        TextField countryFilter= new TextField();
-        countryFilter.setSizeFull();
-        countryFilter.setPlaceholder("Filter");
-        countryFilter.getElement().setAttribute("focus-target", "");
-
-        TextField emailFilter= new TextField();
-        emailFilter.setSizeFull();
-        emailFilter.setPlaceholder("Filter");
-        emailFilter.getElement().setAttribute("focus-target", "");
-
-        TextField phoneFilter= new TextField();
-        phoneFilter.setSizeFull();
-        phoneFilter.setPlaceholder("Filter");
-        phoneFilter.getElement().setAttribute("focus-target", "");
-
-        filterRow.getCell(grid.getColumnByKey("Name")).setComponent(nameFilter);
-        filterRow.getCell(grid.getColumnByKey("Street")).setComponent(streetFilter);
-        filterRow.getCell(grid.getColumnByKey("City")).setComponent(cityFilter);
-        filterRow.getCell(grid.getColumnByKey("Country")).setComponent(countryFilter);
-        filterRow.getCell(grid.getColumnByKey("Email")).setComponent(emailFilter);
-        filterRow.getCell(grid.getColumnByKey("Phone")).setComponent(phoneFilter);
-
+        configureFilter(grid, dataProvider);
 
         Crud.addEditColumn(grid);
 
-
         return grid;
+    }
+
+    public  void configureFilter(Grid<EmployeeInformations> grid, Vector<EmployeeInformations> dataProvider) {
+
+        HeaderRow filterRow = grid.appendHeaderRow();
+
+         TextField nameFilter = new TextField();
+         TextField phoneFilter = new TextField();
+
+
+        //Name Filter
+
+        nameFilter.setSizeFull();
+        nameFilter.setPlaceholder("Filter");
+        nameFilter.setClearButtonVisible(true);
+        nameFilter.getElement().setAttribute("focus-target", "");
+
+
+        //Phone Filter
+
+        phoneFilter.setSizeFull();
+        phoneFilter.setPlaceholder("Filter");
+        phoneFilter.setClearButtonVisible(true);
+        phoneFilter.getElement().setAttribute("focus-target", "");
+
+        //Adding filters to grid
+        filterRow.getCell(grid.getColumnByKey("Name")).setComponent(nameFilter);
+        filterRow.getCell(grid.getColumnByKey("Phone")).setComponent(phoneFilter);
+
+        nameFilter.addValueChangeListener(e -> filterColumns(grid,dataProvider,nameFilter,phoneFilter));
+        phoneFilter.addValueChangeListener(e -> filterColumns(grid,dataProvider,nameFilter,phoneFilter));
+
+    }
+
+    private  void filterColumns(Grid<EmployeeInformations> grid, Vector<EmployeeInformations> dataProvider, TextField nameFilter, TextField phoneFilter) {
+
+        String q1 = nameFilter.getValue();
+        String q2 = phoneFilter.getValue();
+
+        if (!q1.equals("") && q2.equals(""))
+            grid.setItems(dataProvider.stream().filter(c -> c.getName().equalsIgnoreCase(nameFilter.getValue())));
+
+        if (q1.equals("") && !q2.equals(""))
+            grid.setItems(dataProvider.stream().filter(c -> c.getPhone().equalsIgnoreCase(phoneFilter.getValue())));
+
+        if (!q1.equals("") && !q2.equals(""))
+            grid.setItems(dataProvider.stream().filter(c -> c.getName().equalsIgnoreCase(nameFilter.getValue()) && c.getPhone().equalsIgnoreCase(phoneFilter.getValue())));
+
+        if (q1.equals("") && q2.equals("")) {
+            grid.setItems(dataProvider);
+        }
+    }
+
+    public static boolean isPhoneUnique(Vector<EmployeeInformations> dataProvider, String v) {
+        return  !dataProvider.stream().anyMatch(x -> x.getPhone().equals(v));
     }
 
 }
